@@ -11,7 +11,7 @@ jobs:
     name: Skill body ≤ 200 words
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run word-cap check
         run: bash scripts/check-skill-words.sh
@@ -20,7 +20,7 @@ jobs:
     name: Validate plugin and extension manifests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Validate JSON manifests
         run: |
@@ -59,7 +59,7 @@ jobs:
     name: Context-file imports are tight one-liners
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: CLAUDE.md and GEMINI.md must import AGENTS.md
         run: |
