@@ -1,0 +1,33 @@
+# AGENTS.md — fgate
+
+- fgate is a Claude Code plugin AND Gemini CLI extension shipping six gates: `init`, `prompt`, `plan`, `implement`, `review`, `improve`.
+- Audience: solo developers driving agentic coding workflows on Gemini CLI and Claude Code with files-as-state. Personal-first, MIT, no enterprise theatre.
+- Author: Médéric Hurier (Fmind). License: MIT.
+- Stack: pure markdown skills + minimal bash + JSON/TOML manifests. No Python, no Node runtime, no LLM-classifier safety layers, no telemetry.
+- The repository root is **simultaneously** a Claude Code plugin (`.claude-plugin/plugin.json` + `marketplace.json`) AND a Gemini CLI extension (`gemini-extension.json`).
+- Canonical artifacts: `skills/<name>/SKILL.md` (Agent Skills open standard, agentskills.io). Both tools auto-discover from the default `./skills/` location — no manifest override needed.
+- Gemini CLI also needs `commands/fgate/<name>.toml` shells that `@{...}`-embed the canonical SKILL.md body and tail-append `{{args}}`. Each TOML is ~5 lines.
+- Claude Code reads `skills/` directly; no `commands/` shells needed. Slash commands and skills are now the same primitive in Claude Code.
+- Skill body cap: ≤200 words, enforced by `bash scripts/check-skill-words.sh`. Heavy reference material lives in sibling files under `skills/<n>/` (e.g. `references/`, `templates/`).
+- Skill `description` starts with "Use when…" — trigger-rich, never workflow-summarizing.
+- `disable-model-invocation: true` is set on `implement`, `review`, `improve` (side-effect-y gates the user must trigger explicitly). `init`, `prompt`, `plan` are left auto-invocable so Claude can pick them up from informal task descriptions.
+- `AGENTS.md` is the single source of truth for repo context. `CLAUDE.md` is one line: `@AGENTS.md`. `GEMINI.md` is one line: `@./AGENTS.md`. Both tools natively expand `@file.md`.
+- `.agents/skills` is a committed symlink → `../skills/` so the author's `.agents/skills/` workflow resolves while editing fgate itself. End users never see this; they get a real `.agents/skills/` directory via `/fgate:init`.
+- Branch per task. `/fgate:prompt` creates `gates/<N>_<slug>` from main; gate files commit on that branch; `/fgate:review` proposes the merge.
+- File presence is state. No `state.json`, no in-memory chaining: `prompt.md` exists, no `plan.md` → ready for `/fgate:plan`. `plan.md` exists, no `result.md` → ready for `/fgate:implement`. `result.md` exists → ready for `/fgate:review`.
+- Two artifacts per gate: `human/<gate>.md` (terse skim, 30-second budget) and `agent/<gate>.md` (full detail, reproducible decisions). Both committed; effectively read-only after write — except `trace.md`, which is append-only during `/fgate:implement` then sealed.
+- Each non-review skill ends suggesting exactly one next command. `/fgate:review` is the only branching gate; it picks one primary action (ship / improve / follow-up) and mentions alternatives in a one-line `Other options:` footer.
+- `/fgate:improve` is the only command that mutates the meta-process. Diffs must be small: bullet additions/edits to AGENTS.md OR targeted edits to one skill body, never both, never structural rearrangement.
+- `/fgate:improve` two output modes: branch/worktree (default, non-trivial) or in-place (small confirmed tweaks; only reaches other in-flight branches after this task merges to main).
+- Pin `version` in `.claude-plugin/plugin.json` and `gemini-extension.json` from day one. Without it, Claude Code falls back to the git SHA → every commit becomes a forced upgrade for users.
+- Common-denominator design: anything that doesn't work cleanly in BOTH Gemini CLI and Claude Code does not ship in v1. Tool-specific features live in the manifest layer (TOML shell or plugin.json), not in the canonical SKILL.md.
+- Avoid in canonical SKILL.md bodies: Claude Code's `${CLAUDE_SKILL_DIR}`, inline `` !`...` ``, `${user_config.X}` (Gemini CLI doesn't expand them). Avoid Gemini CLI's `!{shell}` and `@{path}` substitutions in SKILL.md bodies — they're only valid in TOML shells.
+- Skills `paths`, `allowed-tools`, `argument-hint` Claude-Code-only frontmatter fields are documentation only — Gemini CLI ignores them. Don't rely on them for behavior.
+- Local dev install (Claude Code): `claude --plugin-dir ./` from the repo root, or `/plugin marketplace add ./` then `/plugin install fgate@fgate`.
+- Local dev install (Gemini CLI): `gemini extensions link ./` from the repo root. Edits in the source dir reload on next session. Use `/commands reload` in-session for TOML-only edits.
+- Run `bash scripts/check-skill-words.sh` before committing any change to a `skills/<n>/SKILL.md` body. CI enforces this on every push and PR via `.github/workflows/ci.yml`.
+- `AGENTS.md` size is left to human judgement — no hard cap on bullet count or line length. Single-level bullets only; no headers within the bullet body.
+- Conventional commits required. Format `<type>(<scope>): <subject>`. Common types: `feat`, `fix`, `chore`, `docs`, `refactor`. Scope is the gate name (`init`, `prompt`, ...) for gate work, or `fgate` for cross-cutting changes.
+- No telemetry. No supply-chain phone-home. No remote install of code at runtime. The toolkit is offline-friendly.
+- Phase 0 research lives in `docs/research/` (`superpowers.md`, `gstack.md`, `claude-code.md`, `gemini-cli.md`, `pain-points.md`). Pre-implementation review in `docs/final-check.md`. Implementation thesis in `PLAN.md`.
+- Review of any work the agent ships is summarized in `TLDR.md` at the repo root after each implementation cycle (intended for the human reviewer; not committed during routine task gates).

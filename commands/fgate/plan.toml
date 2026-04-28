@@ -1,0 +1,7 @@
+description = "fgate plan — investigate the codebase and produce a precise per-file specification."
+
+prompt = """
+@{skills/plan/SKILL.md}
+
+{{args}}
+"""

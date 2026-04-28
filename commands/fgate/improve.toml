@@ -1,0 +1,7 @@
+description = "fgate improve — produce a reviewable diff to AGENTS.md or one skill body."
+
+prompt = """
+@{skills/improve/SKILL.md}
+
+{{args}}
+"""

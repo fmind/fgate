@@ -1,0 +1,16 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs and scratch
+*.log
+
+# Local-only Claude Code settings (do not commit machine-specific overrides)
+.claude/settings.local.json
+
+# Local-only Gemini CLI settings
+.gemini/settings.local.json

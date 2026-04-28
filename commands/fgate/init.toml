@@ -1,0 +1,7 @@
+description = "fgate init — bootstrap a fresh repo with .agents/, AGENTS.md, CLAUDE.md, GEMINI.md."
+
+prompt = """
+@{skills/init/SKILL.md}
+
+{{args}}
+"""

@@ -1,0 +1,7 @@
+description = "fgate implement — execute the plan to the success criteria."
+
+prompt = """
+@{skills/implement/SKILL.md}
+
+{{args}}
+"""

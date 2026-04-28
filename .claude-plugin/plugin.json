@@ -1,0 +1,23 @@
+{
+  "name": "fgate",
+  "version": "0.1.0",
+  "description": "Six agentic coding gates (init, prompt, plan, implement, review, improve) with files-as-state. Portable across Claude Code and Gemini CLI.",
+  "author": {
+    "name": "Médéric Hurier",
+    "email": "mederic.hurier@fmind.dev",
+    "url": "https://github.com/fmind"
+  },
+  "homepage": "https://github.com/fmind/fgate",
+  "repository": "https://github.com/fmind/fgate",
+  "license": "MIT",
+  "keywords": [
+    "agentic-coding",
+    "skills",
+    "agent-skills",
+    "workflow",
+    "gates",
+    "files-as-state",
+    "claude-code",
+    "gemini-cli"
+  ]
+}

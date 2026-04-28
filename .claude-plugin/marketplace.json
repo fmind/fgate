@@ -1,0 +1,14 @@
+{
+  "name": "fgate",
+  "owner": {
+    "name": "Médéric Hurier (Fmind)",
+    "email": "mederic.hurier@fmind.dev"
+  },
+  "plugins": [
+    {
+      "name": "fgate",
+      "source": "./",
+      "description": "Six agentic coding gates with files-as-state, portable across Claude Code and Gemini CLI."
+    }
+  ]
+}

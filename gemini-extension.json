@@ -1,0 +1,6 @@
+{
+  "name": "fgate",
+  "version": "0.1.0",
+  "description": "Six agentic coding gates (init, prompt, plan, implement, review, improve) with files-as-state. Portable across Claude Code and Gemini CLI.",
+  "contextFileName": "GEMINI.md"
+}

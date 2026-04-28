@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  skill-word-cap:
+    name: Skill body ≤ 200 words
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run word-cap check
+        run: bash scripts/check-skill-words.sh
+
+  manifest-validate:
+    name: Validate plugin and extension manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON manifests
+        run: |
+          set -eu
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json gemini-extension.json; do
+            echo "Validating $f"
+            python3 -c "import json,sys; json.load(open('$f'))"
+          done
+
+      - name: Validate TOML shells
+        run: |
+          set -eu
+          python3 - <<'PY'
+          import sys
+          import tomllib
+          import pathlib
+
+          fail = False
+          for path in sorted(pathlib.Path("commands/fgate").glob("*.toml")):
+              try:
+                  data = tomllib.loads(path.read_text())
+              except Exception as exc:
+                  print(f"FAIL {path}: {exc}")
+                  fail = True
+                  continue
+              missing = [r for r in ("description", "prompt") if r not in data]
+              if missing:
+                  print(f"FAIL {path}: missing fields {missing}")
+                  fail = True
+              else:
+                  print(f"OK   {path}")
+          sys.exit(1 if fail else 0)
+          PY
+
+  context-files:
+    name: Context-file imports are tight one-liners
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CLAUDE.md and GEMINI.md must import AGENTS.md
+        run: |
+          set -eu
+          grep -qx '@AGENTS.md' CLAUDE.md
+          grep -qx '@./AGENTS.md' GEMINI.md
+          echo "OK   CLAUDE.md and GEMINI.md import AGENTS.md"

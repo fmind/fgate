@@ -1,0 +1,7 @@
+description = "fgate review — confirm criteria, propose merge or surface follow-ups."
+
+prompt = """
+@{skills/review/SKILL.md}
+
+{{args}}
+"""

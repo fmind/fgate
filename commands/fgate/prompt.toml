@@ -1,0 +1,7 @@
+description = "fgate prompt — capture user intent, set criteria, create a task workspace and branch."
+
+prompt = """
+@{skills/prompt/SKILL.md}
+
+{{args}}
+"""
