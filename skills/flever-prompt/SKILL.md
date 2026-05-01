@@ -85,7 +85,10 @@ Examples of acceptable verifiers:
 
 ## 5. Hand off
 
-End the response with exactly:
+End with exactly one tag on its own line, then `Next:`:
+
+- `<gate-status>COMPLETE</gate-status>` — checklist written, no `[NEEDS CLARIFICATION:` markers escalated.
+- `<gate-status>DECIDE: <topic></gate-status>` — at least one irreducible clarification needs the human before plan can run.
 
 ```text
 Next: /flever:plan <id>

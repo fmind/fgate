@@ -21,7 +21,7 @@ GATE="${2:?need lever}"
 ARG="${3:-}"
 WORKSPACE="${4:?need workspace}"
 
-REPO="/home/fmind/fgate"
+REPO="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 SKILL_FILE="$REPO/benchmarks/$VERSION/skills/flever-$GATE/SKILL.md"
 [[ -f "$SKILL_FILE" ]] || SKILL_FILE="$REPO/benchmarks/$VERSION/skills/fgate-$GATE/SKILL.md"
 [[ -f "$SKILL_FILE" ]] || { echo "Skill not found: $SKILL_FILE"; exit 99; }

@@ -44,7 +44,7 @@ leverage = (passed_criteria × autonomy_bonus) / (wall_minutes + 5 × human_touc
 Where:
 
 - `passed_criteria` — count of acceptance-checklist `verify:` rows with exit 0 on the *final* run by the project's own verifier (`verify-*.sh`).
-- `autonomy_bonus` — `1.0` if zero `[NEEDS CLARIFICATION:` markers AND zero question-mark sentences in the gate stdouts AND every gate ended with a `<gate-status>` tag; else `0.5`.
+- `autonomy_bonus` — `1.0` if zero `[NEEDS CLARIFICATION:` markers AND zero question-mark sentences in the lever stdouts AND every lever ended with a `<gate-status>` tag; else `0.5`.
 - `wall_minutes` — `prompt + plan + implement + review` summed.
 - `human_touches` — count of times a hypothetical human would have to read+respond (questions in stdout, `[NEEDS CLARIFICATION:` markers, `BLOCKED`/`DECIDE` tags).
 - `tool_calls` — total tool invocations across gates (parsed from agent telemetry where available, else estimated from trace.md entries).

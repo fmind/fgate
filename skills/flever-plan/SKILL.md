@@ -114,7 +114,11 @@ Every checklist item maps to ≥ 1 row.
 
 ## 7. Hand off
 
-End with exactly:
+End with exactly one tag on its own line, then `Next:` when applicable:
+
+- `<gate-status>COMPLETE</gate-status>` — plan written, every checklist item covered, no escalations.
+- `<gate-status>BLOCKED: <reason></gate-status>` — codebase reality conflicts with the prompt and the conflict is not resolvable here.
+- `<gate-status>DECIDE: <topic></gate-status>` — irreducible clarification surfaced in §5.
 
 ```text
 Next: /flever:implement <id>

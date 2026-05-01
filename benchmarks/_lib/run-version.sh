@@ -15,7 +15,7 @@ RUN_ID="${2:?need run-id}"
 TASK_NAME="${3:-task}"
 TASK_ARG="${4:-build the project specified in TASK.md}"
 
-REPO="/home/fmind/fgate"
+REPO="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 TASK_DIR="$REPO/benchmarks/$TASK_NAME"
 [[ -d "$TASK_DIR" ]] || { echo "task dir not found: $TASK_DIR"; exit 1; }
 case "$TASK_NAME" in

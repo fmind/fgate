@@ -1,4 +1,4 @@
-description = "Capture user intent for a new task: define success criteria up-front, create the gate folder and instructions."
+description = "Capture user intent for a new task: define success criteria up-front, create the lever folder and instructions."
 
 prompt = """
 Activate and follow the `flever-prompt` skill.
