@@ -1,7 +1,7 @@
 description = "Capture a meta-process learning as a reviewable diff to AGENTS.md and/or skill bodies."
 
 prompt = """
-Activate and follow the `fgate-improve` skill.
+Activate and follow the `flever-improve` skill.
 
 {{args}}
 """

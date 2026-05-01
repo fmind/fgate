@@ -19,13 +19,13 @@ Verifier: `_lib/verify.sh` and `_lib/verify-b.sh` build a venv from each run dir
 
 ## Outcome — task-b (mdtoc, 11 criteria)
 
-| Version | Pass count | Implement runtime | Verifier-runnable criteria | `<gate-status>` tags |
-| ------- | ---------- | ----------------- | -------------------------- | -------------------- |
-| v0      | 11/11      | 530 s             | none — prose Given/When/Then | none                  |
-| v1      | 11/11      | 176 s (3.0× faster) | 10/10 — shell commands per criterion | implement: COMPLETE |
-| v2      | 1/9 partial in current run (rate-limited mid-loop) | n/a | 9/9 — same shape as v1 | every gate emits a tag |
+| Version | Pass count                                         | Implement runtime   | Verifier-runnable criteria           | `<gate-status>` tags   |
+| ------- | -------------------------------------------------- | ------------------- | ------------------------------------ | ---------------------- |
+| v0      | 11/11                                              | 530 s               | none — prose Given/When/Then         | none                   |
+| v1      | 11/11                                              | 176 s (3.0× faster) | 10/10 — shell commands per criterion | implement: COMPLETE    |
+| v2      | 1/9 partial in current run (rate-limited mid-loop) | n/a                 | 9/9 — same shape as v1               | every gate emits a tag |
 
-**Both v0 and v1 reached 11/11 mechanical pass.** The differentiator is *not* end-state correctness — it is path quality:
+**Both v0 and v1 reached 11/11 mechanical pass.** The differentiator is _not_ end-state correctness — it is path quality:
 
 - **3× faster implement gate**. v1 finishes in 176 s where v0 needs 530 s. Reason: v1's checklist is `verify:` shell commands; the agent runs them directly. v0's checklist is prose; the agent re-derives the verifier on every iteration, often re-checking criteria that already passed.
 - **Resume safety.** v1's `passes: false` flag flips deterministically; on re-invocation the loop resumes at the first `false`. v0 has no flag — re-invocation either restarts or skips silently.
@@ -37,25 +37,25 @@ The v2 run hit Gemini rate limits partway through implement (1 of 9 criteria fli
 
 The mechanical pass-count looks identical, but the gap shows up in three places that matter for headless / long-running sessions:
 
-1. **Acceptance checklist is machine-readable in v1, prose in v0.**
+1.  **Acceptance checklist is machine-readable in v1, prose in v0.**
 
-   v0 emits criteria like `Functional TOC Generation: Given a markdown file ... when mdtoc --input is run, then ...`. The implement gate then has to translate the prose back into shell commands at every step.
+    v0 emits criteria like `Functional TOC Generation: Given a markdown file ... when mdtoc --input is run, then ...`. The implement gate then has to translate the prose back into shell commands at every step.
 
-   v1 emits criteria like:
+    v1 emits criteria like:
 
-       - [ ] criterion: Dry-run prints the generated TOC without modifying the file
-         verify: `mdtoc --input sample.md --dry-run`
-         passes: false
+        - [ ] criterion: Dry-run prints the generated TOC without modifying the file
+          verify: `mdtoc --input sample.md --dry-run`
+          passes: false
 
-   The implement loop becomes a literal `for criterion in checklist; if verify exits 0: passes=true; else fix-and-retry`. Resume after an interrupt is trivial — pick the first `passes: false` and continue.
+    The implement loop becomes a literal `for criterion in checklist; if verify exits 0: passes=true; else fix-and-retry`. Resume after an interrupt is trivial — pick the first `passes: false` and continue.
 
-2. **No interactive Q&A in v1.**
+2.  **No interactive Q&A in v1.**
 
-   v0's prompt skill could legitimately ask the user clarifying questions. In a headless `gemini -p` invocation that is a hard stall — the agent waits for stdin that will never arrive. v1 forbids questions entirely: gaps go into `## Assumptions` (logged in both `human/prompt.md` and `agent/prompt.md`) so the human can override after the fact, and only irreversible decisions (`security posture`, `public-API break`, `data migration`) escalate as `[NEEDS CLARIFICATION:` markers.
+    v0's prompt skill could legitimately ask the user clarifying questions. In a headless `gemini -p` invocation that is a hard stall — the agent waits for stdin that will never arrive. v1 forbids questions entirely: gaps go into `## Assumptions` (logged in both `human/prompt.md` and `agent/prompt.md`) so the human can override after the fact, and only irreversible decisions (`security posture`, `public-API break`, `data migration`) escalate as `[NEEDS CLARIFICATION:` markers.
 
-3. **Completion signal is structured.**
+3.  **Completion signal is structured.**
 
-   v1's implement gate ends with exactly one of `<gate-status>COMPLETE|BLOCKED|DECIDE|BUDGET</gate-status>`. The host harness can grep for this tag. v0 ends with prose ("✅ All criteria pass"). When chaining gates non-interactively, the structured tag is the difference between "automated next-step routing" and "human reads the prose to decide".
+    v1's implement gate ends with exactly one of `<gate-status>COMPLETE|BLOCKED|DECIDE|BUDGET</gate-status>`. The host harness can grep for this tag. v0 ends with prose ("✅ All criteria pass"). When chaining gates non-interactively, the structured tag is the difference between "automated next-step routing" and "human reads the prose to decide".
 
 ## v1 → v2 — what changes
 
@@ -88,8 +88,8 @@ Each call writes:
 
 - `runs/<version>/<task>-<run>/.bench/<gate>.{stdout,stderr,timing}` — raw gate output
 - `runs/<version>/<task>-<run>/.agents/gates/<id>-<slug>/{human,agent}/...` — fgate artifacts
+- `runs/<version>/<task>-<run>/.bench/verify.txt` — final mechanical summary
 
 ## Post-port note
 
 v2 was the seed for the renamed `flever-*` skills now under `skills/`. The `fgate-*` and `.agents/gates/` references throughout this document are historical and retained for traceability — the live skill set is `skills/flever-*/SKILL.md` and the workspace state directory is `.agents/levers/`. The frozen `benchmarks/{v0,v1,v2}/skills/` snapshots keep their original `fgate-*` names; BENCHMARK-2 anchors to them as reference variants.
-- `runs/<version>/<task>-<run>/.bench/verify.txt` — final mechanical summary

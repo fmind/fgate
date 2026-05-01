@@ -1,7 +1,7 @@
 description = "Finalize an implemented task: read agent/result.md, confirm criteria, summarize the diff, surface follow-ups."
 
 prompt = """
-Activate and follow the `fgate-review` skill.
+Activate and follow the `flever-review` skill.
 
 {{args}}
 """

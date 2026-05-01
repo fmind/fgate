@@ -6,7 +6,7 @@ Driver: the v0/v1/v2 prompt benchmark under `benchmarks/`. Full results in `benc
 
 1. **Session A — this PLAN.md.** A coding agent executes steps 1–10 below, in order, committing directly to `main` (the project has not been released; no branches, no version tags, no PRs are required). When step 10 is done, this session ends. The agent does **not** start BENCHMARK-2.
 2. **User review.** The user inspects the diff, runs the regression check from step 8 by hand, and decides whether the port is good. If yes, proceeds to session B. If no, opens a follow-up PLAN.
-3. **Session B — `BENCHMARK-2.md`.** A *different*, *clean* coding session is started by the user. That agent reads `BENCHMARK-2.md` from scratch, confirms §0 Prerequisites against the live repo, and runs the benchmark.
+3. **Session B — `BENCHMARK-2.md`.** A _different_, _clean_ coding session is started by the user. That agent reads `BENCHMARK-2.md` from scratch, confirms §0 Prerequisites against the live repo, and runs the benchmark.
 
 The two sessions must not be merged. The PLAN.md agent's job ends at step 10; it must not advance into BENCHMARK-2 even when the work would be straightforward. BENCHMARK-2 is a long-running, statistically-grounded benchmark and gets a fresh context window for it.
 
@@ -41,7 +41,7 @@ The four wins to port:
 
 `skills/fgate-implement/SKILL.md`
 
-- Add §"Read the spec" with a resume rule: *if `agent/trace.md` already has entries, this is a resume — pick up at the first `passes: false`.*
+- Add §"Read the spec" with a resume rule: _if `agent/trace.md` already has entries, this is a resume — pick up at the first `passes: false`._
 - Replace the prose execution section with an explicit pseudocode loop: pick highest-priority `passes: false`, drive plan changes, run `verify:`, flip the flag on success, log to trace, repeat.
 - Add hard caps: 90 tool calls (rough), 5 consecutive non-advancing turns.
 - Replace the prose ending with exactly one machine-parseable tag:
@@ -55,9 +55,9 @@ The four wins to port:
 
 `skills/fgate-plan/SKILL.md`
 
-- Add a default-behaviour line in §"Read": *resolve `[NEEDS CLARIFICATION:` markers by investigation; only escalate if the decision is irreversible AND no defensible default exists.*
+- Add a default-behaviour line in §"Read": _resolve `[NEEDS CLARIFICATION:` markers by investigation; only escalate if the decision is irreversible AND no defensible default exists._
 - In §"Sharpen", confirm every criterion's `verify:` runs from the workspace root — fix it if it doesn't (the prompt skill may produce a verifier that doesn't run from cwd).
-- Allow the plan to *append* a missing criterion to `agent/prompt.md` §Acceptance checklist with `passes: false`, and list it in `human/plan.md` §New criteria so the human spots the addition. Don't silently add criteria.
+- Allow the plan to _append_ a missing criterion to `agent/prompt.md` §Acceptance checklist with `passes: false`, and list it in `human/plan.md` §New criteria so the human spots the addition. Don't silently add criteria.
 - Source: `benchmarks/v2/skills/fgate-plan/SKILL.md`.
 
 ## Step 4 — fgate-review: re-run verifiers, emit tag
@@ -125,15 +125,15 @@ The lever metaphor (small input, large output) describes the project's promise m
 
 **Rename map** (every occurrence):
 
-| Path                                                          | Change                                                                                              |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `skills/fgate-*/SKILL.md`                                     | rename dirs to `skills/flever-*/`; `name:` frontmatter to `flever-<gate>`; body text "fgate" → "flever" and "gate"/"gates" → "lever"/"levers" where the meaning is the workflow step (NOT in `<gate-status>` tag — keep that name as-is for backward-compat through one release; deprecate in the next) |
-| `commands/fgate/*.toml`                                       | rename dir to `commands/flever/`; update any `description`/`prompt` body referencing the old name   |
-| `.agents/gates/`                                              | rename to `.agents/levers/` in all docs and skill bodies; provide a one-shot migration note in `fgate-init` (`mv .agents/gates .agents/levers` if present) |
-| `gemini-extension.json`, `plugin.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | rename keys `name`, `id`, `slug` from `fgate` → `flever`; bump version                                |
-| `package.json` / `package-lock.json`                          | rename `name`                                                                                       |
-| `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `BENCHMARK-2.md` | replace `fgate` with `flever`, `gate` (workflow-step sense) with `lever`; keep historical references in changelog |
-| `benchmarks/v2/skills/...`                                    | leave for traceability; add a one-line note in `benchmarks/RESULTS.md` that v2 was the seed for the renamed `flever-*` skills |
+| Path                                                                                                    | Change                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skills/fgate-*/SKILL.md`                                                                               | rename dirs to `skills/flever-*/`; `name:` frontmatter to `flever-<gate>`; body text "fgate" → "flever" and "gate"/"gates" → "lever"/"levers" where the meaning is the workflow step (NOT in `<gate-status>` tag — keep that name as-is for backward-compat through one release; deprecate in the next) |
+| `commands/fgate/*.toml`                                                                                 | rename dir to `commands/flever/`; update any `description`/`prompt` body referencing the old name                                                                                                                                                                                                       |
+| `.agents/gates/`                                                                                        | rename to `.agents/levers/` in all docs and skill bodies; provide a one-shot migration note in `fgate-init` (`mv .agents/gates .agents/levers` if present)                                                                                                                                              |
+| `gemini-extension.json`, `plugin.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | rename keys `name`, `id`, `slug` from `fgate` → `flever`; bump version                                                                                                                                                                                                                                  |
+| `package.json` / `package-lock.json`                                                                    | rename `name`                                                                                                                                                                                                                                                                                           |
+| `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `BENCHMARK-2.md`                                           | replace `fgate` with `flever`, `gate` (workflow-step sense) with `lever`; keep historical references in changelog                                                                                                                                                                                       |
+| `benchmarks/v2/skills/...`                                                                              | leave for traceability; add a one-line note in `benchmarks/RESULTS.md` that v2 was the seed for the renamed `flever-*` skills                                                                                                                                                                           |
 
 **Tag-name decision** — `<gate-status>` stays. Renaming the tag would break every host integration (CI greps, hooks). Document it as "the lever-status tag, named `<gate-status>` for historical reasons" in `AGENTS.md`. Ship a parallel `<lever-status>` alias in the next minor release; deprecate `<gate-status>` one release after that with a clear migration window.
 
@@ -146,7 +146,7 @@ The lever metaphor (small input, large output) describes the project's promise m
 
 **Local working directory**: stays `~/fgate` per the user's instruction. The project name and metadata change; the path does not. Add a `# NOTE` in the top-level README explaining the local-path/project-name divergence is intentional.
 
-**Order**: do step 10 *after* steps 1–9 are committed on `main`. Renaming during a port produces a noisy diff and obscures intent. Step 10 is the last thing this PLAN does.
+**Order**: do step 10 _after_ steps 1–9 are committed on `main`. Renaming during a port produces a noisy diff and obscures intent. Step 10 is the last thing this PLAN does.
 
 ## Step 11 — end the session
 

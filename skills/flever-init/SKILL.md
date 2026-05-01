@@ -1,23 +1,26 @@
 ---
-name: fgate-init
-description: Use when bootstrapping a new repo for fgate — scaffold .agents/, generate AGENTS.md, wire CLAUDE.md and GEMINI.md.
+name: flever-init
+description: Use when bootstrapping a new repo for flever — scaffold .agents/, generate AGENTS.md, wire CLAUDE.md and GEMINI.md.
 ---
 
-# fgate-init
+# flever-init
 
-Bootstrap this repo for fgate. Idempotent: if a target file already exists, leave it.
+Bootstrap this repo for flever. Idempotent: if a target file already exists, leave it.
 
 ## 1. Pre-flight
 
 1. Confirm the cwd is a git repo: `git rev-parse --is-inside-work-tree`. Refuse if not.
-2. Run `git status --porcelain`. If non-empty, list the dirty paths in `human/init.md` §Pre-existing changes and proceed — fgate-init only adds files, it never touches existing ones.
-3. Confirm `.agents/` is not in `.gitignore` — gates and docs are tracked. If it is, surface the offending line and stop with `<gate-status>BLOCKED: .agents/ is gitignored</gate-status>`.
+2. Run `git status --porcelain`. If non-empty, list the dirty paths in `human/init.md` §Pre-existing changes and proceed — flever-init only adds files, it never touches existing ones.
+3. Confirm `.agents/` is not in `.gitignore` — levers and docs are tracked. If it is, surface the offending line and stop with `<gate-status>BLOCKED: .agents/ is gitignored</gate-status>`.
 
 ## 2. Workspace skeleton
 
 ```bash
-mkdir -p .agents/gates .agents/docs
-touch .agents/gates/.gitkeep .agents/docs/.gitkeep
+# One-shot migration from the historical layout (project was renamed fgate → flever):
+[[ -d .agents/gates && ! -d .agents/levers ]] && git mv .agents/gates .agents/levers
+
+mkdir -p .agents/levers .agents/docs
+touch .agents/levers/.gitkeep .agents/docs/.gitkeep
 ```
 
 ## 3. Generate `AGENTS.md` (skip if it exists)
@@ -36,7 +39,7 @@ Rules for the bullets:
 - Single-level lists. No nested lists, no headers inside a bullet body.
 - Each bullet is a complete fact (`Test with bun test --watch`), not a label (`Test`).
 - No design-diary content — rationales, alternatives considered, internal preferences. The file is a guide for collaborators, not a notebook.
-- 20–50 bullets is a reasonable starting point; grow over time via `/fgate:improve`.
+- 20–50 bullets is a reasonable starting point; grow over time via `/flever:improve`.
 
 ## 4. Wire host context files (skip each if it exists)
 
@@ -53,5 +56,5 @@ End the response with exactly one tag, then `Next:`:
 - `<gate-status>BLOCKED: <reason></gate-status>` — pre-flight refused.
 
 ```text
-Next: /fgate:prompt <short-title-of-first-task>
+Next: /flever:prompt <short-title-of-first-task>
 ```

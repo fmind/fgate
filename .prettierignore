@@ -3,3 +3,8 @@ node_modules/
 LICENSE
 .agents/gates/
 .agents/levers/
+benchmarks/runs/
+benchmarks/v0/
+benchmarks/v1/
+benchmarks/v2/
+BENCHMARK-2.md

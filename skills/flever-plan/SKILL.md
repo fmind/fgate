@@ -1,17 +1,17 @@
 ---
-name: fgate-plan
+name: flever-plan
 description: Use when turning a captured prompt into a per-file specification — investigate the codebase, sharpen the acceptance checklist, resolve clarifications by reading not asking.
 paths:
-  - ".agents/gates/**"
+  - ".agents/levers/**"
 ---
 
-# fgate-plan
+# flever-plan
 
 Convert `agent/prompt.md` into a per-file spec and a TDD-ordered test plan. Resolve `[NEEDS CLARIFICATION:` markers through investigation; only the truly irreducible ones get escalated.
 
 ## 1. Locate the task
 
-Argument is `<id>` or a slug fragment. Resolve to `.agents/gates/<id>-<slug>/`. If multiple match, pick the lowest `<id>` and note the choice in `agent/plan.md`.
+Argument is `<id>` or a slug fragment. Resolve to `.agents/levers/<id>-<slug>/`. If multiple match, pick the lowest `<id>` and note the choice in `agent/plan.md`.
 
 ## 2. Read
 
@@ -117,5 +117,5 @@ Every checklist item maps to ≥ 1 row.
 End with exactly:
 
 ```text
-Next: /fgate:implement <id>
+Next: /flever:implement <id>
 ```

@@ -1,60 +1,62 @@
-# fgate
+# flever
 
 > **Amplify the agent loop <> Simplify the human loop.**
 >
-> Six gates that capture agent work as reviewable artifacts.
+> Six levers that capture agent work as reviewable artifacts.
 >
 > `init` → `prompt` → `plan` → `implement` → `review` → `improve`
 
+**NOTE — local clones may live at `~/fgate`.** The project name is `flever`, but the repository on disk can stay at `~/fgate` to avoid breaking active sessions. The path is intentional — only the project name and metadata changed.
+
 ## What you get
 
-- **State is just files.** Every gate writes markdown under `.agents/gates/<id>/`. Skills inspect git state to orient themselves but never modify it — staging, commits, branches, and merges stay with you.
-- **One source, every coding agent.** Skills live under `skills/fgate-<name>/SKILL.md` (the open Agent Skills format) and are auto-discovered everywhere.
-- **30-second skim, full record.** `human/<gate>.md` is a one-screen brief; `agent/<gate>.md` is the full decision log. You read what you need; the agent reads what it needs.
-- **Self-improvement as a diff.** When a task exposes a recurring gap, `/fgate:improve` proposes a reviewable change to the relevant skill or AGENTS.md to align with your expectation.
+- **State is just files.** Every lever writes markdown under `.agents/levers/<id>/`. Skills inspect git state to orient themselves but never modify it — staging, commits, branches, and merges stay with you.
+- **One source, every coding agent.** Skills live under `skills/flever-<name>/SKILL.md` (the open Agent Skills format) and are auto-discovered everywhere.
+- **30-second skim, full record.** `human/<lever>.md` is a one-screen brief; `agent/<lever>.md` is the full decision log. You read what you need; the agent reads what it needs.
+- **Self-improvement as a diff.** When a task exposes a recurring gap, `/flever:improve` proposes a reviewable change to the relevant skill or AGENTS.md to align with your expectation.
 
-## The six gates
+## The six levers
 
-| Gate                    | What it does                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `/fgate:init`           | Bootstrap a repo: `.agents/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.          |
-| `/fgate:prompt <title>` | Capture intent. Define success criteria.                                      |
-| `/fgate:plan <id>`      | Investigate the codebase and external docs. Produce a per-file specification. |
-| `/fgate:implement <id>` | Execute the plan. Stop only on critical blockers.                             |
-| `/fgate:review <id>`    | Confirm criteria, summarize the diff, optionally surface follow-ups.          |
-| `/fgate:improve <id>`   | Optional. Reviewable diff to `AGENTS.md` and/or skill bodies.                 |
+| Lever                    | What it does                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `/flever:init`           | Bootstrap a repo: `.agents/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.          |
+| `/flever:prompt <title>` | Capture intent. Define success criteria.                                      |
+| `/flever:plan <id>`      | Investigate the codebase and external docs. Produce a per-file specification. |
+| `/flever:implement <id>` | Execute the plan. Stop only on critical blockers.                             |
+| `/flever:review <id>`    | Confirm criteria, summarize the diff, optionally surface follow-ups.          |
+| `/flever:improve <id>`   | Optional. Reviewable diff to `AGENTS.md` and/or skill bodies.                 |
 
-Two contracts hold the gates together:
+Two contracts hold the levers together:
 
-- **Checklist contract** — every acceptance criterion carries a runnable `verify:` shell command and a `passes: false` flag. `/fgate:implement` flips the flag on success; `/fgate:review` re-runs the verifier as the final ground truth.
-- **Chaining contract** — every gate ends with exactly one `<gate-status>...</gate-status>` tag (`COMPLETE`, `BLOCKED`, `DECIDE`, `BUDGET`, `SHIP`, `RESUME`, `IMPROVE`, `SKIP`) on its own line. A wrapper or CI job greps for the tag to route the next gate without human reading.
+- **Checklist contract** — every acceptance criterion carries a runnable `verify:` shell command and a `passes: false` flag. `/flever:implement` flips the flag on success; `/flever:review` re-runs the verifier as the final ground truth.
+- **Chaining contract** — every lever ends with exactly one `<gate-status>...</gate-status>` tag (`COMPLETE`, `BLOCKED`, `DECIDE`, `BUDGET`, `SHIP`, `RESUME`, `IMPROVE`, `SKIP`) on its own line. A wrapper or CI job greps for the tag to route the next lever without human reading. (The tag retains the `<gate-status>` name for backward-compat — see `AGENTS.md`.)
 
 ## Example walkthrough
 
-A typical task on a fresh fgate-enabled repo:
+A typical task on a fresh flever-enabled repo:
 
 ```text
-$ /fgate:prompt add password sign-in
-  → creates .agents/gates/1-add_password_sign_in/
+$ /flever:prompt add password sign-in
+  → creates .agents/levers/1-add_password_sign_in/
   → writes {human,agent}/prompt.md
-  → "Next: /fgate:plan 1"
+  → "Next: /flever:plan 1"
 
-$ /fgate:plan 1
+$ /flever:plan 1
   → reads agent/prompt.md, investigates the codebase
   → writes plan.md (per-file spec, refined criteria)
-  → "Next: /fgate:implement 1"
+  → "Next: /flever:implement 1"
 
-$ /fgate:implement 1
+$ /flever:implement 1
   → executes the plan, appends to trace.md
   → writes result.md
-  → "Next: /fgate:review 1"
+  → "Next: /flever:review 1"
 
-$ /fgate:review 1
+$ /flever:review 1
   → confirms each criterion, summarizes the diff
   → "ready to ship — diff is staged, integrate it however you like."
 ```
 
-Run `/fgate:improve 1` only if the task surfaced a meta-process gap worth keeping.
+Run `/flever:improve 1` only if the task surfaced a meta-process gap worth keeping.
 
 ## Install
 
@@ -63,21 +65,21 @@ Run `/fgate:improve 1` only if the task surfaced a meta-process gap worth keepin
 Local development (no install):
 
 ```bash
-claude --plugin-dir /path/to/fgate
+claude --plugin-dir /path/to/flever
 ```
 
 Via the bundled marketplace:
 
 ```text
-/plugin marketplace add /path/to/fgate
-/plugin install fgate@fgate
+/plugin marketplace add /path/to/flever
+/plugin install flever@flever
 ```
 
 After publishing to GitHub:
 
 ```text
-/plugin marketplace add fmind/fgate
-/plugin install fgate@fgate
+/plugin marketplace add fmind/flever
+/plugin install flever@flever
 ```
 
 ### Gemini CLI
@@ -85,13 +87,13 @@ After publishing to GitHub:
 Local development (live-link, edits reload on next session):
 
 ```bash
-gemini extensions link /path/to/fgate
+gemini extensions link /path/to/flever
 ```
 
 Public install:
 
 ```bash
-gemini extensions install fmind/fgate
+gemini extensions install fmind/flever
 ```
 
 ### GitHub Copilot
@@ -101,49 +103,49 @@ Local development (VS Code) — point `chat.pluginLocations` at the repo:
 ```jsonc
 // settings.json
 "chat.pluginLocations": {
-  "/path/to/fgate": true
+  "/path/to/flever": true
 }
 ```
 
 Copilot CLI / VS Code marketplace:
 
 ```bash
-copilot plugin marketplace add fmind/fgate
+copilot plugin marketplace add fmind/flever
 ```
 
 ## Layout
 
 ```text
-fgate/
+flever/
 ├── AGENTS.md                       # canonical context — read natively by Copilot; @-included by CLAUDE.md and GEMINI.md
 ├── CLAUDE.md                       # one-liner: @AGENTS.md
 ├── GEMINI.md                       # one-liner: @./AGENTS.md
 ├── plugin.json                     # GitHub Copilot agent-plugin manifest
 ├── .claude-plugin/
 │   ├── plugin.json                 # Claude Code plugin manifest
-│   └── marketplace.json            # bundles fgate as a single-plugin marketplace
+│   └── marketplace.json            # bundles flever as a single-plugin marketplace
 ├── gemini-extension.json           # Gemini CLI extension manifest
 ├── skills/                         # canonical Agent Skills (open standard) — auto-discovered by every supported tool
-│   ├── fgate-init/SKILL.md
-│   ├── fgate-prompt/SKILL.md
-│   ├── fgate-plan/SKILL.md
-│   ├── fgate-implement/SKILL.md
-│   ├── fgate-review/SKILL.md
-│   └── fgate-improve/SKILL.md
-├── commands/                       # optional slash-command shells — resolve to /fgate:<name>
+│   ├── flever-init/SKILL.md
+│   ├── flever-prompt/SKILL.md
+│   ├── flever-plan/SKILL.md
+│   ├── flever-implement/SKILL.md
+│   ├── flever-review/SKILL.md
+│   └── flever-improve/SKILL.md
+├── commands/                       # optional slash-command shells — resolve to /flever:<name>
 │   ├── <name>.md                   # Claude Code: plugin name auto-prefixes
-│   └── fgate/<name>.toml           # Gemini CLI: subdir provides the namespace
+│   └── flever/<name>.toml          # Gemini CLI: subdir provides the namespace
 └── .github/workflows/ci.yml        # lint + format + manifest validation
 ```
 
-In an end-user project after `/fgate:init`:
+In an end-user project after `/flever:init`:
 
 ```text
 .agents/
-├── gates/<id>_<slug>/
+├── levers/<id>_<slug>/
 │   ├── human/{prompt,plan,trace,result,improve}.md
 │   └── agent/{prompt,plan,trace,result,improve}.md
-└── docs/                           # cross-task knowledge curated by /fgate:plan
+└── docs/                           # cross-task knowledge curated by /flever:plan
 ```
 
 ## Conventions

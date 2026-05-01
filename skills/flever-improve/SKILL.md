@@ -1,15 +1,15 @@
 ---
-name: fgate-improve
+name: flever-improve
 description: Use when a task surfaced a meta-process lesson — emit a reviewable diff to AGENTS.md and/or skill bodies.
 ---
 
-# fgate-improve
+# flever-improve
 
-Produce a reviewable diff to the user-project `AGENTS.md` and/or one or more fgate `skills/fgate-<name>/SKILL.md` files. The diff is the deliverable; keep it as small as the lesson allows but as wide as it genuinely spans — restructuring is allowed when warranted.
+Produce a reviewable diff to the user-project `AGENTS.md` and/or one or more flever `skills/flever-<name>/SKILL.md` files. The diff is the deliverable; keep it as small as the lesson allows but as wide as it genuinely spans — restructuring is allowed when warranted.
 
 ## 1. Read the source material
 
-1. Resolve the task to `.agents/gates/<id>-<slug>/`.
+1. Resolve the task to `.agents/levers/<id>-<slug>/`.
 2. Read `agent/result.md` and the open-questions block in `human/result.md`.
 3. Re-read `agent/trace.md` for `blocker:` and decision entries that suggest a reusable rule.
 
@@ -18,7 +18,7 @@ Produce a reviewable diff to the user-project `AGENTS.md` and/or one or more fga
 | Symptom                                                          | Target                                           |
 | ---------------------------------------------------------------- | ------------------------------------------------ |
 | Project convention drift, recurring mistake, missing fact        | Project `AGENTS.md`                              |
-| Gate procedure flaw, ambiguous step, missing precondition        | `skills/fgate-<name>/SKILL.md` (fgate src)       |
+| Lever procedure flaw, ambiguous step, missing precondition       | `skills/flever-<name>/SKILL.md` (flever src)     |
 | Cross-task project knowledge (auth, schema, deploy, conventions) | `.agents/docs/<topic>.md` — do in plan, not here |
 
 A single improve may span any combination of these targets. `improve` mutates the meta-process only — project-domain knowledge belongs in `.agents/docs/` and should have been captured during plan.

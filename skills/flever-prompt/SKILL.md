@@ -1,17 +1,17 @@
 ---
-name: fgate-prompt
+name: flever-prompt
 description: Use when capturing user intent for a new task — turn the ask into a runnable acceptance checklist, log assumptions, never ask the user.
 ---
 
-# fgate-prompt
+# flever-prompt
 
 Lock down a checklist of mechanically verifiable criteria. Default aggressively from project context; assumptions go in the artifact, not the chat.
 
 ## 1. Resolve workspace
 
-1. New `<id>` = max of `.agents/gates/<id>-*` + 1, starting at 1.
+1. New `<id>` = max of `.agents/levers/<id>-*` + 1, starting at 1.
 2. Slug the title (lower snake_case, ≤ 40 chars). On collision pick the next free slug.
-3. `mkdir -p .agents/gates/<id>-<slug>/{human,agent}`.
+3. `mkdir -p .agents/levers/<id>-<slug>/{human,agent}`.
 
 ## 2. Ground in context
 
@@ -88,5 +88,5 @@ Examples of acceptable verifiers:
 End the response with exactly:
 
 ```text
-Next: /fgate:plan <id>
+Next: /flever:plan <id>
 ```

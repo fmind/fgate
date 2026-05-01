@@ -1,7 +1,7 @@
 description = "Capture user intent for a new task: define success criteria up-front, create the gate folder and instructions."
 
 prompt = """
-Activate and follow the `fgate-prompt` skill.
+Activate and follow the `flever-prompt` skill.
 
 {{args}}
 """

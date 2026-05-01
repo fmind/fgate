@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Drive an entire fgate cycle (prompt → plan → implement → review) for one version,
-# then verify acceptance criteria. Produces a self-contained run dir.
+# Drive an entire flever cycle (prompt → plan → implement → review) for one version,
+# then verify acceptance criteria. Produces a self-contained run dir. Frozen v0/v1/v2
+# benchmark variants still use the historical `fgate-` skill prefix; the live `main`
+# variant uses `flever-` (run-gate.sh resolves either).
 #
 # Usage: run-version.sh <version> <run-id> [task-name] [task-arg]
 #   task-name defaults to "task" (uses benchmarks/task/TASK.md and verify.sh).

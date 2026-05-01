@@ -1,7 +1,7 @@
 description = "Bootstrap a fresh repo: scaffold .agents/, generate AGENTS.md from the codebase, then write agent folders."
 
 prompt = """
-Activate and follow the `fgate-init` skill.
+Activate and follow the `flever-init` skill.
 
 {{args}}
 """

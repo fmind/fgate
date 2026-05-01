@@ -1,6 +1,6 @@
 # Benchmark task B: `mdtoc` — Markdown TOC injector
 
-A harder, partially-underspecified task. The user's surface ask is one sentence; the spec below is what a good agent should *infer or default* without asking the human. The mechanical verifier still gives a deterministic pass/fail score.
+A harder, partially-underspecified task. The user's surface ask is one sentence; the spec below is what a good agent should _infer or default_ without asking the human. The mechanical verifier still gives a deterministic pass/fail score.
 
 ## User-surface ask
 
@@ -16,12 +16,15 @@ That's all the user says in `/flever:prompt`. Everything below is what the agent
 
 1. Reads markdown from `--input <path>` (required).
 2. Locates the TOC region delimited by:
-   ```
+
+   ```text
    <!-- mdtoc:start -->
    ...existing TOC, replaced...
    <!-- mdtoc:end -->
    ```
+
    If the sentinels are missing, exits 1 with `error: TOC sentinels not found in <path>`.
+
 3. Generates a TOC: one `- [<heading text>](#<slug>)` per heading, indented by 2 spaces per level beyond `--min-level` (default 2 — so `##` is depth 0).
 4. Writes the file in place. With `--check`, exits 0 if the file is already up to date or 1 if it would change (no write). With `--dry-run`, prints the new TOC to stdout, no write.
 5. GitHub slug rules: lowercase; spaces → hyphens; drop characters not in `[a-z0-9-]`; collapse consecutive hyphens; strip leading/trailing hyphens. Duplicate slugs get `-1`, `-2`, … suffixes (1-based).

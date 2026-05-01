@@ -1,21 +1,21 @@
 ---
-name: fgate-implement
+name: flever-implement
 description: Use when executing a planned task — drive every checklist criterion to passes:true, run the verifier yourself, end with an explicit completion tag.
 paths:
-  - ".agents/gates/**"
+  - ".agents/levers/**"
 ---
 
-# fgate-implement
+# flever-implement
 
 You are the loop. Drive the §Acceptance checklist in `agent/prompt.md` until every criterion's `passes: true`, or until a hard stop fires. End with one of the four completion tags below — never with prose only. Resume cleanly when re-invoked: prior trace + checklist state is the source of truth.
 
 ## 1. Read the spec
 
-1. Resolve to `.agents/gates/<id>-<slug>/`.
+1. Resolve to `.agents/levers/<id>-<slug>/`.
 2. Read `agent/plan.md` end-to-end (per-file changes, TDD order, Coverage).
 3. Read `agent/prompt.md` §Acceptance checklist — this is your exit condition.
 4. If `agent/trace.md` already has entries: this is a resume. Re-read it; don't restart from scratch. Pick up at the first criterion still `passes: false`.
-5. Refuse to start only if `[NEEDS CLARIFICATION:` markers remain anywhere in the gate dir.
+5. Refuse to start only if `[NEEDS CLARIFICATION:` markers remain anywhere in the lever dir.
 
 ## 2. The loop
 
@@ -151,4 +151,4 @@ End the response with exactly **one** completion tag on its own line:
 - `<gate-status>DECIDE: <question></gate-status>` — user decision required.
 - `<gate-status>BUDGET: <pass>/<total></gate-status>` — out of budget.
 
-When and only when the tag is `COMPLETE`, follow with `Next: /fgate:review <id>`.
+When and only when the tag is `COMPLETE`, follow with `Next: /flever:review <id>`.
