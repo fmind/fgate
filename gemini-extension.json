@@ -1,5 +1,24 @@
 {
-  "name": "flever",
-  "version": "0.2.0",
-  "description": "Amplify the agent loop <> Simplify the human loop."
+  "name": "lever",
+  "version": "1.0.0",
+  "description": "Levers for AI coding agents — multiply the agent's force, divide the human's effort.",
+  "author": {
+    "name": "Médéric Hurier",
+    "email": "mederic.hurier@fmind.dev",
+    "url": "https://github.com/fmind"
+  },
+  "homepage": "https://github.com/fmind/agent-levers",
+  "repository": "https://github.com/fmind/agent-levers",
+  "license": "MIT",
+  "keywords": [
+    "agentic-coding",
+    "skills",
+    "agent-skills",
+    "workflow",
+    "levers",
+    "files-as-state",
+    "claude-code",
+    "gemini-cli",
+    "github-copilot"
+  ]
 }

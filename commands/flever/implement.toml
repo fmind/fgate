@@ -1,7 +1,0 @@
-description = "Execute the planned task: read agent/plan.md, ship changes to meet the success criterias, stopping only on critical blockers."
-
-prompt = """
-Activate and follow the `flever-implement` skill.
-
-{{args}}
-"""

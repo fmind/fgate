@@ -1,14 +1,14 @@
 {
-  "name": "flever",
+  "name": "agent-levers",
   "owner": {
     "name": "Médéric Hurier (Fmind)",
     "email": "mederic.hurier@fmind.dev"
   },
   "plugins": [
     {
-      "name": "flever",
+      "name": "lever",
       "source": "./",
-      "description": "Amplify the agent loop <> Simplify the human loop."
+      "description": "Levers for AI coding agents — multiply the agent's force, divide the human's effort."
     }
   ]
 }

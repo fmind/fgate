@@ -2,20 +2,8 @@
   "config": {
     "default": true,
     "MD013": false,
-    "MD024": { "siblings_only": true },
-    "MD033": false,
-    "MD041": false,
-    "MD046": false,
-    "MD030": false
+    "MD041": false
   },
   "globs": ["**/*.md"],
-  "ignores": [
-    "node_modules/**",
-    ".git/**",
-    "benchmarks/runs/**",
-    "benchmarks/v0/**",
-    "benchmarks/v1/**",
-    "benchmarks/v2/**",
-    "BENCHMARK-2.md"
-  ]
+  "ignores": ["node_modules/**", ".git/**"]
 }

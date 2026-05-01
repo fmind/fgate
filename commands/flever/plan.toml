@@ -1,7 +1,0 @@
-description = "Investigate the codebase to turn the prompt into a precise specification with refined success criteria."
-
-prompt = """
-Activate and follow the `flever-plan` skill.
-
-{{args}}
-"""
