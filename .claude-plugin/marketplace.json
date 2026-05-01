@@ -1,14 +1,14 @@
 {
-  "name": "fgate",
+  "name": "flever",
   "owner": {
     "name": "Médéric Hurier (Fmind)",
     "email": "mederic.hurier@fmind.dev"
   },
   "plugins": [
     {
-      "name": "fgate",
+      "name": "flever",
       "source": "./",
-      "description": "Six agentic coding gates with files-as-state, portable across Claude Code and Gemini CLI."
+      "description": "Amplify the agent loop <> Simplify the human loop."
     }
   ]
 }

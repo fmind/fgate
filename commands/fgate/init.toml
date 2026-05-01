@@ -1,7 +1,7 @@
-description = "fgate init — bootstrap a fresh repo with .agents/, AGENTS.md, CLAUDE.md, GEMINI.md."
+description = "Bootstrap a fresh repo: scaffold .agents/, generate AGENTS.md from the codebase, then write agent folders."
 
 prompt = """
-@{skills/init/SKILL.md}
+Activate and follow the `fgate-init` skill.
 
 {{args}}
 """

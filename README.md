@@ -1,48 +1,79 @@
 # fgate
 
-> An agentic coding workflow toolkit. Six gates (`init` → `prompt` → `plan` → `implement` → `review` → `improve`), portable across **Gemini CLI** and **Claude Code**, with files-as-state and a self-improvement loop that ships reviewable diffs.
+> **Amplify the agent loop <> Simplify the human loop.**
+>
+> Six gates that capture agent work as reviewable artifacts.
+>
+> `init` → `prompt` → `plan` → `implement` → `review` → `improve`
 
-fgate is a personal-first toolkit (OSS as a bonus, MIT) that closes the loop between human intent and agent execution. Same canonical skills, two thin manifests.
+## What you get
 
-## Why fgate?
-
-Three load-bearing pillars (the moat):
-
-1. **Files as I/O.** Every agent input and output is a markdown file under `.agents/gates/<id>/`. No sidecar DB, no `state.json`, no LLM scratchpad. Branch + file presence = state.
-2. **Amplify the user.** Minimum attention per step, maximum work between steps. Each command suggests the next; the human approves hand-offs, doesn't synthesize.
-3. **Alignment via self-improvement.** `/fgate:improve` is the only command that mutates the meta-process (`AGENTS.md` or one `skills/<n>/SKILL.md`). Every invocation produces a reviewable git diff.
-
-Stays simpler than spec-kit / BMad / superpowers / gstack: 6 skills, ≤ 200 words per skill body, no enterprise theatre.
+- **State is just files.** Every gate writes markdown under `.agents/gates/<id>/`. Skills inspect git state to orient themselves but never modify it — staging, commits, branches, and merges stay with you.
+- **One source, every coding agent.** Skills live under `skills/fgate-<name>/SKILL.md` (the open Agent Skills format) and are auto-discovered everywhere.
+- **30-second skim, full record.** `human/<gate>.md` is a one-screen brief; `agent/<gate>.md` is the full decision log. You read what you need; the agent reads what it needs.
+- **Self-improvement as a diff.** When a task exposes a recurring gap, `/fgate:improve` proposes a reviewable change to the relevant skill or AGENTS.md to align with your expectation.
 
 ## The six gates
 
-| Gate                       | What it does                                                                            |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| `/fgate:init`              | Bootstrap a fresh repo: `.agents/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.              |
-| `/fgate:prompt <title>`    | Capture user intent. Set initial success criteria. Hard cap of 3 questions.             |
-| `/fgate:plan <id>`         | Investigate codebase + relevant docs to produce a precise per-file specification.       |
-| `/fgate:implement <id>`    | Execute the plan to the success criteria. Stop only on critical blockers.               |
-| `/fgate:review <id>`       | Confirm criteria, propose merge to `main`, optionally surface follow-ups or learnings.  |
-| `/fgate:improve <id>`      | (Optional) ship a reviewable diff to `AGENTS.md` or one skill body.                     |
+| Gate                    | What it does                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `/fgate:init`           | Bootstrap a repo: `.agents/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`.          |
+| `/fgate:prompt <title>` | Capture intent. Define success criteria.                                      |
+| `/fgate:plan <id>`      | Investigate the codebase and external docs. Produce a per-file specification. |
+| `/fgate:implement <id>` | Execute the plan. Stop only on critical blockers.                             |
+| `/fgate:review <id>`    | Confirm criteria, summarize the diff, optionally surface follow-ups.          |
+| `/fgate:improve <id>`   | Optional. Reviewable diff to `AGENTS.md` and/or skill bodies.                 |
+
+Two contracts hold the gates together:
+
+- **Checklist contract** — every acceptance criterion carries a runnable `verify:` shell command and a `passes: false` flag. `/fgate:implement` flips the flag on success; `/fgate:review` re-runs the verifier as the final ground truth.
+- **Chaining contract** — every gate ends with exactly one `<gate-status>...</gate-status>` tag (`COMPLETE`, `BLOCKED`, `DECIDE`, `BUDGET`, `SHIP`, `RESUME`, `IMPROVE`, `SKIP`) on its own line. A wrapper or CI job greps for the tag to route the next gate without human reading.
+
+## Example walkthrough
+
+A typical task on a fresh fgate-enabled repo:
+
+```text
+$ /fgate:prompt add password sign-in
+  → creates .agents/gates/1-add_password_sign_in/
+  → writes {human,agent}/prompt.md
+  → "Next: /fgate:plan 1"
+
+$ /fgate:plan 1
+  → reads agent/prompt.md, investigates the codebase
+  → writes plan.md (per-file spec, refined criteria)
+  → "Next: /fgate:implement 1"
+
+$ /fgate:implement 1
+  → executes the plan, appends to trace.md
+  → writes result.md
+  → "Next: /fgate:review 1"
+
+$ /fgate:review 1
+  → confirms each criterion, summarizes the diff
+  → "ready to ship — diff is staged, integrate it however you like."
+```
+
+Run `/fgate:improve 1` only if the task surfaced a meta-process gap worth keeping.
 
 ## Install
 
 ### Claude Code
 
-Local dev (in-place, no install):
+Local development (no install):
 
 ```bash
 claude --plugin-dir /path/to/fgate
 ```
 
-Or, install via the bundled marketplace:
+Via the bundled marketplace:
 
 ```text
 /plugin marketplace add /path/to/fgate
 /plugin install fgate@fgate
 ```
 
-After publishing to GitHub, anyone can run:
+After publishing to GitHub:
 
 ```text
 /plugin marketplace add fmind/fgate
@@ -51,7 +82,7 @@ After publishing to GitHub, anyone can run:
 
 ### Gemini CLI
 
-Live-dev symlink (edits reload on next session):
+Local development (live-link, edits reload on next session):
 
 ```bash
 gemini extensions link /path/to/fgate
@@ -63,37 +94,53 @@ Public install:
 gemini extensions install fmind/fgate
 ```
 
+### GitHub Copilot
+
+Local development (VS Code) — point `chat.pluginLocations` at the repo:
+
+```jsonc
+// settings.json
+"chat.pluginLocations": {
+  "/path/to/fgate": true
+}
+```
+
+Copilot CLI / VS Code marketplace:
+
+```bash
+copilot plugin marketplace add fmind/fgate
+```
+
 ## Layout
 
-```
+```text
 fgate/
-├── AGENTS.md                       # canonical context — single source of truth
+├── AGENTS.md                       # canonical context — read natively by Copilot; @-included by CLAUDE.md and GEMINI.md
 ├── CLAUDE.md                       # one-liner: @AGENTS.md
 ├── GEMINI.md                       # one-liner: @./AGENTS.md
+├── plugin.json                     # GitHub Copilot agent-plugin manifest
 ├── .claude-plugin/
 │   ├── plugin.json                 # Claude Code plugin manifest
 │   └── marketplace.json            # bundles fgate as a single-plugin marketplace
 ├── gemini-extension.json           # Gemini CLI extension manifest
-├── skills/                         # canonical Agent Skills (open standard)
-│   ├── init/SKILL.md
-│   ├── prompt/SKILL.md
-│   ├── plan/SKILL.md
-│   ├── implement/SKILL.md
-│   ├── review/SKILL.md
-│   └── improve/SKILL.md
-├── commands/fgate/                 # Gemini TOML shells; Claude Code reads skills/ directly
-│   └── *.toml                      # 5-line files; @{...}-embed the canonical SKILL.md
-├── scripts/
-│   └── check-skill-words.sh        # CI: enforce ≤ 200 words per skill body
-├── .github/workflows/ci.yml        # word-cap + manifest validation
-└── .agents/skills -> ../skills/    # committed symlink (only on the fgate repo itself)
+├── skills/                         # canonical Agent Skills (open standard) — auto-discovered by every supported tool
+│   ├── fgate-init/SKILL.md
+│   ├── fgate-prompt/SKILL.md
+│   ├── fgate-plan/SKILL.md
+│   ├── fgate-implement/SKILL.md
+│   ├── fgate-review/SKILL.md
+│   └── fgate-improve/SKILL.md
+├── commands/                       # optional slash-command shells — resolve to /fgate:<name>
+│   ├── <name>.md                   # Claude Code: plugin name auto-prefixes
+│   └── fgate/<name>.toml           # Gemini CLI: subdir provides the namespace
+└── .github/workflows/ci.yml        # lint + format + manifest validation
 ```
 
 In an end-user project after `/fgate:init`:
 
-```
+```text
 .agents/
-├── gates/<N>_<slug>/
+├── gates/<id>_<slug>/
 │   ├── human/{prompt,plan,trace,result,improve}.md
 │   └── agent/{prompt,plan,trace,result,improve}.md
 └── docs/                           # cross-task knowledge curated by /fgate:plan
@@ -101,18 +148,9 @@ In an end-user project after `/fgate:init`:
 
 ## Conventions
 
-- **Skill body ≤ 200 words.** Enforced by `scripts/check-skill-words.sh` in CI. Heavy reference material lives in sibling files under each skill directory.
 - **`description` starts with "Use when…"** Trigger-rich, never workflow-summarizing.
-- **AGENTS.md is bullets only.** Single-level list. No headers, no paragraphs.
-- **Branch per task.** `/fgate:prompt` creates `gates/<N>_<slug>` from `main`. `/fgate:review` proposes the merge.
-- **Conventional commits.** `<type>(<scope>): <subject>`.
-- **No Python, no PyPI, minimal bash.** Everything is plain markdown plus standard CLI tooling.
-
-## Inspiration & counter-positioning
-
-Borrows from [obra/superpowers](https://github.com/obra/superpowers) (hard gates between stages, predictable artifact paths, name-the-next-skill ending) and [garrytan/gstack](https://github.com/garrytan/gstack) (specialist sub-checklists, file-based learning loops).
-
-Avoids superpowers' moralizing tone, gstack's role-playing personae, and any 9-step linear processes. Under-engineered on purpose.
+- **AGENTS.md is sectioned bullet lists.** Single-level bullets, one fact per bullet.
+- **Markdown lint and format enforced in CI.** `markdownlint-cli2` + `prettier`.
 
 ## License
 

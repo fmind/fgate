@@ -1,7 +1,7 @@
-description = "fgate prompt — capture user intent, set criteria, create a task workspace and branch."
+description = "Capture user intent for a new task: define success criteria up-front, create the gate folder and instructions."
 
 prompt = """
-@{skills/prompt/SKILL.md}
+Activate and follow the `fgate-prompt` skill.
 
 {{args}}
 """

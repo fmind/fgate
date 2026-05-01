@@ -1,7 +1,7 @@
-description = "fgate implement — execute the plan to the success criteria."
+description = "Execute the planned task: read agent/plan.md, ship changes to meet the success criterias, stopping only on critical blockers."
 
 prompt = """
-@{skills/implement/SKILL.md}
+Activate and follow the `fgate-implement` skill.
 
 {{args}}
 """

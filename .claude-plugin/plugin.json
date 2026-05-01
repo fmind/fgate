@@ -1,23 +1,24 @@
 {
-  "name": "fgate",
-  "version": "0.1.0",
-  "description": "Six agentic coding gates (init, prompt, plan, implement, review, improve) with files-as-state. Portable across Claude Code and Gemini CLI.",
+  "name": "flever",
+  "version": "2.0.0",
+  "description": "Amplify the agent loop <> Simplify the human loop.",
   "author": {
     "name": "Médéric Hurier",
     "email": "mederic.hurier@fmind.dev",
     "url": "https://github.com/fmind"
   },
-  "homepage": "https://github.com/fmind/fgate",
-  "repository": "https://github.com/fmind/fgate",
+  "homepage": "https://github.com/fmind/flever",
+  "repository": "https://github.com/fmind/flever",
   "license": "MIT",
   "keywords": [
     "agentic-coding",
     "skills",
     "agent-skills",
     "workflow",
-    "gates",
+    "levers",
     "files-as-state",
     "claude-code",
-    "gemini-cli"
+    "gemini-cli",
+    "github-copilot"
   ]
 }

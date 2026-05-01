@@ -1,0 +1,15 @@
+{
+  "name": "flever",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Amplify the agent loop <> Simplify the human loop.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "prettier --check \"**/*.{md,json,yml,yaml}\" && markdownlint-cli2",
+    "format": "prettier --write \"**/*.{md,json,yml,yaml}\" && markdownlint-cli2 --fix"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.22.1",
+    "prettier": "^3.8.3"
+  }
+}

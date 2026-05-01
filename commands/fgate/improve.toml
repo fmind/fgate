@@ -1,7 +1,7 @@
-description = "fgate improve — produce a reviewable diff to AGENTS.md or one skill body."
+description = "Capture a meta-process learning as a reviewable diff to AGENTS.md and/or skill bodies."
 
 prompt = """
-@{skills/improve/SKILL.md}
+Activate and follow the `fgate-improve` skill.
 
 {{args}}
 """

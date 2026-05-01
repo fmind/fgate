@@ -1,257 +1,165 @@
-# fgate — Plan
+# PLAN — apply benchmark findings to fgate skills
 
-> An agentic coding workflow toolkit. Six gates (init → prompt → plan → implement → review → improve), portable across Gemini CLI and Claude Code, with files-as-state and a self-improvement loop that ships reviewable diffs.
+Driver: the v0/v1/v2 prompt benchmark under `benchmarks/`. Full results in `benchmarks/RESULTS.md`. Both v0 and v1 reach 11/11 on the harder mdtoc task, but v1's implement gate is **3× faster** (176 s vs 530 s), end-state-resumable, and machine-routable. v2 hardens edge cases. This PLAN ports the v2 wins back to `skills/fgate-*/SKILL.md`.
 
-## 1. Vision & Moat
+## Sequence (two separate coding sessions, manually triggered by the user)
 
-fgate is a personal-first toolkit (OSS as a bonus, MIT) that closes the loop between human intent and agent execution. Daily-driver-first for **Gemini CLI** and **Claude Code** — same canonical skills, two thin manifests.
+1. **Session A — this PLAN.md.** A coding agent executes steps 1–10 below, in order, committing directly to `main` (the project has not been released; no branches, no version tags, no PRs are required). When step 10 is done, this session ends. The agent does **not** start BENCHMARK-2.
+2. **User review.** The user inspects the diff, runs the regression check from step 8 by hand, and decides whether the port is good. If yes, proceeds to session B. If no, opens a follow-up PLAN.
+3. **Session B — `BENCHMARK-2.md`.** A *different*, *clean* coding session is started by the user. That agent reads `BENCHMARK-2.md` from scratch, confirms §0 Prerequisites against the live repo, and runs the benchmark.
 
-Three load-bearing pillars (the moat):
+The two sessions must not be merged. The PLAN.md agent's job ends at step 10; it must not advance into BENCHMARK-2 even when the work would be straightforward. BENCHMARK-2 is a long-running, statistically-grounded benchmark and gets a fresh context window for it.
 
-1. **Files as I/O.** Every agent input and output is a markdown file under `.agents/gates/<id>/`. No sidecar DB, no `state.json`, no LLM scratchpad. Branch + file presence = state. (Counter to the field's compaction-as-magic stance — a real pain point per HN 47338664, 45923974.)
-2. **Amplify the user.** Minimum attention per step, maximum work between steps. Each command suggests the next; the human approves hand-offs, doesn't synthesize. Stops only on critical blockers; non-critical issues land in review.
-3. **Alignment via self-improvement.** `/fgate:improve` is the only command that mutates the meta-process (AGENTS.md or `skills/<n>/SKILL.md`). Every invocation produces a reviewable git diff. (Most "self-improving" frameworks ship retros that go nowhere — superpowers retros, gstack `learnings.jsonl`, BMad `*retro` all dump into chat history or agent-only state. Verified in pain-points §4.)
+The four wins to port:
 
-Stays simpler than spec-kit / BMad / superpowers / gstack: 6 skills, ≤ 200 words per skill body, no enterprise theatre.
+1. **`verify:` + `passes: false` on every acceptance criterion.**
+2. **Implement is a loop with a budget and a `<gate-status>` tag.**
+3. **Prompt makes assumptions explicit instead of asking questions.**
+4. **Init / Review / Improve emit their own `<gate-status>` tags.**
 
-## 2. Principles
+## Step 1 — fgate-prompt: drop Q&A, add machine-readable checklist
 
-- **File presence is state.** No `state.json`, no in-memory chaining.
-- **Two artifacts per gate**: `human/<gate>.md` (terse skim) + `agent/<gate>.md` (full detail). Different attention budgets, different files. Both committed; effectively read-only after write (the next gate writes new files, not edits).
-- **AGENTS.md is the single source of truth**; `CLAUDE.md` and `GEMINI.md` are one-line `@AGENTS.md` imports (no symlinks). Both tools natively expand `@file.md` in their context files.
-- **Branch per task.** Each `<id>_<slug>` lives on its own branch; gates progress on that branch; merge to `main` happens at `/fgate:review`'s suggestion.
-- **Each command suggests the next.** Hand-off is the contract.
-- **Self-improvement only via `/fgate:improve`.** Keeps the meta-surface tight and reviewable.
-- **Native plugin systems first.** Markdown-first. No Python, no PyPI, minimal bash.
-- **Common-denominator design.** Anything that doesn't work cleanly in BOTH Gemini CLI and Claude Code doesn't ship in v1.
+`skills/fgate-prompt/SKILL.md`
 
-## 3. Commands
+- Delete §2 ("Challenge the prompt" — the up-to-3-questions block, lines 16–34).
+- Replace with a "Ground in context" step: read `AGENTS.md`, `README.md`, the user ask, any spec file the ask points at; for every gap, pick a defensible default and log it in §Assumptions of both artifacts.
+- Keep `[NEEDS CLARIFICATION: ...]` for the rare irreversible-and-no-defensible-default case (data migration, public-API break, security posture).
+- Change the acceptance-checklist shape in `agent/prompt.md` from:
 
-Six skills under one plugin/extension namespace. Skill folders are bare verbs (`init/`, `prompt/`, `plan/`, `implement/`, `review/`, `improve/`); the `fgate` plugin/extension namespace supplies the prefix on invocation. So the user types `/fgate:init`, `/fgate:prompt`, etc. — Claude Code forces this namespace for plugin-installed skills, and Gemini CLI matches it via the `commands/fgate/` subdirectory convention.
+      - [ ] <criterion>
 
-Note on Claude Code: `disable-model-invocation: true` is set on `implement`, `review`, and `improve` (side-effect-y gates the user must trigger explicitly). Left unset on `init`, `prompt`, and `plan` so Claude can auto-invoke them when the user describes work informally.
+  to:
 
-### `/fgate:init`
+      - [ ] criterion: <text>
+        verify: `<exact shell command>`
+        passes: false
 
-Bootstrap a fresh repo for fgate use.
+- Add an `## Assumptions` section to both `human/prompt.md` and `agent/prompt.md` so the human can override defaults.
+- Source: `benchmarks/v2/skills/fgate-prompt/SKILL.md`.
 
-- Create `.agents/{skills,gates,docs}/` skeleton (Agent Skills cross-tool standard root).
-- Generate `AGENTS.md` from scratch by inspecting the repo (~30 bullets initially; can grow over time). Reusing an external AGENTS.md from a path/URL is v0.2.
-- Write `CLAUDE.md` containing `@AGENTS.md` and `GEMINI.md` containing `@./AGENTS.md` (each tool natively expands the import). Optional tool-specific notes can follow the import line.
-- Suggest `/fgate:prompt <title>`.
+## Step 2 — fgate-implement: explicit loop, budget, completion tag
 
-### `/fgate:prompt <short-title>`
+`skills/fgate-implement/SKILL.md`
 
-Capture user intent. **Set initial success criteria** — this is where the human's attention is highest, so spend it here.
+- Add §"Read the spec" with a resume rule: *if `agent/trace.md` already has entries, this is a resume — pick up at the first `passes: false`.*
+- Replace the prose execution section with an explicit pseudocode loop: pick highest-priority `passes: false`, drive plan changes, run `verify:`, flip the flag on success, log to trace, repeat.
+- Add hard caps: 90 tool calls (rough), 5 consecutive non-advancing turns.
+- Replace the prose ending with exactly one machine-parseable tag:
+  - `<gate-status>COMPLETE</gate-status>`
+  - `<gate-status>BLOCKED: <reason></gate-status>`
+  - `<gate-status>DECIDE: <question></gate-status>`
+  - `<gate-status>BUDGET: <pass>/<total></gate-status>`
+- Source: `benchmarks/v2/skills/fgate-implement/SKILL.md`.
 
-- Resolves a new task ID `<N>_<slug>`; creates branch `gates/<N>_<slug>` from `main`.
-- Challenges the prompt — asks targeted questions to extract context up-front. **Hard cap: 3 questions** (or stop earlier when criteria are concrete). If criteria can't be made concrete, fail loud — don't advance to `/fgate:plan`.
-- Defines initial success criteria (tests pass, lint clean, behavior X observed). The human signs off here.
-- Writes `human/prompt.md` (terse) + `agent/prompt.md` (full, including criteria).
-- Commits on the task branch. Suggests `/fgate:plan <id>`.
+## Step 3 — fgate-plan: investigate, don't escalate
 
-### `/fgate:plan <id>`
+`skills/fgate-plan/SKILL.md`
 
-Investigate codebase + relevant docs to produce a precise specification.
+- Add a default-behaviour line in §"Read": *resolve `[NEEDS CLARIFICATION:` markers by investigation; only escalate if the decision is irreversible AND no defensible default exists.*
+- In §"Sharpen", confirm every criterion's `verify:` runs from the workspace root — fix it if it doesn't (the prompt skill may produce a verifier that doesn't run from cwd).
+- Allow the plan to *append* a missing criterion to `agent/prompt.md` §Acceptance checklist with `passes: false`, and list it in `human/plan.md` §New criteria so the human spots the addition. Don't silently add criteria.
+- Source: `benchmarks/v2/skills/fgate-plan/SKILL.md`.
 
-- Surfaces only **blocking** decisions; otherwise advances silently.
-- Refines the criteria from `/fgate:prompt` — does NOT introduce new criteria the user hasn't sanctioned.
-- Writes `human/plan.md` (summary) + `agent/plan.md` (precise spec).
-- Commits. Suggests `/fgate:implement <id>`.
+## Step 4 — fgate-review: re-run verifiers, emit tag
 
-### `/fgate:implement <id>`
+`skills/fgate-review/SKILL.md`
 
-Execute the plan to the success criteria.
+- Strengthen §"Re-run the verifiers" so it is the canonical pass/fail authority (treats `agent/result.md` as a hint, not the truth).
+- Replace the prose ending with one tag:
+  - `<gate-status>SHIP: <pass>/<total></gate-status>`
+  - `<gate-status>RESUME: <pass>/<total> failing=<criterion></gate-status>`
+  - `<gate-status>IMPROVE: <one-line lesson></gate-status>`
+- Source: `benchmarks/v2/skills/fgate-review/SKILL.md`.
 
-- Continuously appends to `human/trace.md` (key events) + `agent/trace.md` (full execution log).
-- Tests + lint inside this gate; targets defined in plan.
-- Stops only on **critical blockers** (e.g., not authenticated to a CLI). Non-critical issues finish and surface in review.
-- On completion writes `human/result.md` (summary, open questions) + `agent/result.md` (decisions, alternatives considered).
-- Commits. Suggests `/fgate:review <id>`.
+## Step 5 — fgate-init: stop asking on dirty repo
 
-### `/fgate:review <id>`
+`skills/fgate-init/SKILL.md`
 
-Read `result.md`, align with the user, and finalize the task.
+- §"Pre-flight" currently asks the user when `git status --porcelain` is non-empty. Change to: list dirty paths in `human/init.md` §Pre-existing changes and proceed. fgate-init is additive-only (creates `.agents/`, writes `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` only when missing) so dirty state is safe.
+- The only hard refusal stays: if `.agents/` is gitignored, emit `<gate-status>BLOCKED: .agents/ is gitignored</gate-status>` and stop.
+- Add an end-of-skill tag (`<gate-status>COMPLETE</gate-status>` or `<gate-status>BLOCKED: ...</gate-status>`) before the `Next:` line.
+- Source: `benchmarks/v2/skills/fgate-init/SKILL.md`.
 
-- **Default**: propose a conventional-commit message + a merge plan; ask Y/N before committing and merging the task branch back to `main`.
-- May also propose follow-up work (`/fgate:prompt ...`) or meta-process tweaks (`/fgate:improve <id>`).
-- **Override the commit-mode** by either: (a) adding an AGENTS.md bullet that names the desired mode (e.g., "review auto-commits without asking" or "review only suggests; user runs `git commit` manually"), or (b) shipping a project-specific review skill at `.agents/skills/review/SKILL.md` to replace the gate end-game wholesale.
+## Step 6 — fgate-improve: emit tag
 
-### `/fgate:improve <id>`
+`skills/fgate-improve/SKILL.md`
 
-**Optional, user-triggered.** Convert improvement notes into changes to **AGENTS.md** (in the user's project, in-place) or a **`skills/<name>/SKILL.md`** (proposed as a diff against fgate's source for the user to PR upstream).
+- Add an end-of-skill tag:
+  - `<gate-status>IMPROVE: <files touched></gate-status>` — diff staged.
+  - `<gate-status>SKIP: <reason></gate-status>` — trace yielded no reusable rule.
+- Source: `benchmarks/v2/skills/fgate-improve/SKILL.md`.
 
-- The only command that mutates the meta-process. Diffs must be small and reviewable: bullet additions/edits in AGENTS.md OR targeted edits to a single skill body — never both at once.
-- **Two output modes** (asked at invocation):
-  - **Branch / worktree** (default): create `improve/<task-id>_<topic>`, write the diff there, leave merge to the user. Best for non-trivial changes that warrant a review beat.
-  - **In place**: edit AGENTS.md (or the skill body) on the current task branch directly. Best for confirmed, small tweaks.
-- Skipping is fine. Most tasks won't earn an `improve` step; that's a feature, not a bug.
+## Step 7 — wiring docs
 
-## 4. Folder Structure
+- `AGENTS.md` §Skill authoring: add a bullet — "Every gate ends with exactly one `<gate-status>...</gate-status>` tag on its own line. Hosts grep for it to chain gates."
+- `AGENTS.md` §Workflow: add a bullet — "Acceptance criteria carry a runnable `verify:` shell command and a `passes: false` flag. Implement flips the flag; review re-runs the verifier."
+- `README.md` §Six gates: mention `<gate-status>` tags as the chaining contract and `verify:`/`passes:` as the checklist contract.
 
-The fgate repo root is **simultaneously** a Claude Code plugin AND a Gemini CLI extension. Both tools auto-discover skills from the manifest's default `./skills/` location — verified: Claude Code's `plugin.json` `skills` field defaults to `./skills/`; Gemini CLI's extension loader hardcodes the path to `<extension-root>/skills/` (per `extension-manager.ts` in `google-gemini/gemini-cli`). So `./skills/` is canonical here; no manifest override is needed.
+## Step 8 — verify the port
 
-`.agents/` is the cross-tool open standard for **end-user projects** (per agentskills.io and `npx skills`, the Vercel-maintained installer that drops SKILL.md files at `.agents/skills/` for non-Claude tools and `.claude/skills/` for Claude Code). Inside fgate's own repo, `.agents/skills/` is a committed symlink → `../skills/` so the author's `.agents/skills/`-based personal workflow can reach fgate's skills while editing fgate itself.
+After steps 1–7 land:
 
-```
-fgate/
-  AGENTS.md                           # canonical context (~30 bullets after init; grows over time)
-  CLAUDE.md                           # one-line: `@AGENTS.md` (Claude Code expands it natively)
-  GEMINI.md                           # one-line: `@./AGENTS.md` (Gemini CLI expands it natively)
-  PLAN.md, README.md, LICENSE         # MIT
+1. Re-run `bash benchmarks/_lib/run-version.sh main run1 task-b` (after temporarily linking `benchmarks/main/skills` → `skills/`). Target: ≤ 200 s implement, 11/11 verify.
+2. Check that every gate's stdout contains a `<gate-status>` tag (`grep -oE '<gate-status>[^<]*</gate-status>' .bench/*.stdout`).
+3. Resume test — kill implement halfway, re-invoke `/fgate:implement <id>`, confirm it picks up at the first `passes: false` row.
 
-  .claude-plugin/
-    plugin.json                       # plugin manifest (version pinned; default ./skills/, no override)
-    marketplace.json                  # single-plugin marketplace ("source": "./")
+## Step 9 — preserve benchmark scaffolding as a regression suite
 
-  gemini-extension.json               # Gemini CLI extension manifest (skills auto-discovered from ./skills/)
+Once steps 1–8 ship, **keep `benchmarks/` in-tree** — BENCHMARK-2 reuses its harness (`_lib/run-gate.sh`, `_lib/run-version.sh`, `_lib/verify*.sh`) and its three frozen variant snapshots (`v0/`, `v1/`, `v2/`) as historical baselines. Specifically:
 
-  skills/                             # CANONICAL — Agent Skills (open standard, agentskills.io)
-    init/SKILL.md
-    prompt/SKILL.md
-    plan/SKILL.md
-    implement/SKILL.md
-    review/SKILL.md
-    improve/SKILL.md
+- `benchmarks/v0/skills/` is the **frozen pre-port baseline**. BENCHMARK-2 references it as reference variant `R1`. Do not delete or modify after the port lands.
+- `benchmarks/v1/skills/` and `benchmarks/v2/skills/` are referenced as `R2` and `R3`. Same rule: frozen.
+- `benchmarks/sandbox/` can be removed if it contains nothing valuable (it was a scratch dir during BENCHMARK-1).
 
-  commands/                           # Gemini TOML shells (Claude Code does not need these)
-    fgate/
-      init.toml                       # /fgate:init — body: @{skills/init/SKILL.md}\n{{args}}
-      prompt.toml
-      plan.toml
-      implement.toml
-      review.toml
-      improve.toml
+Splitting `benchmarks/` into a separate `flever-bench` repo is deferred until BENCHMARK-2 finishes — moving it now invalidates the variant snapshots that BENCHMARK-2 anchors to.
 
-  docs/research/                      # Phase 0 outputs (not loaded at runtime)
-    superpowers.md, gstack.md, claude-code.md, gemini-cli.md, pain-points.md
+## Step 10 — rename `fgate` → `flever`
 
-  scripts/
-    check-skill-words.sh              # CI: enforce ≤ 200 words per SKILL.md body
+The lever metaphor (small input, large output) describes the project's promise more accurately than "gate" (which only describes one mechanism). Rename everything except the local working directory, which stays `~/fgate` for now to avoid breaking active sessions.
 
-  .agents/                            # cross-tool .agents/ root (this layout is what /fgate:init creates in user projects)
-    skills -> ../skills/              # symlink (committed in fgate; in user projects this is a real dir)
-    gates/                            # task workspace (committed on task branches)
-      <N>_<slug>/
-        human/{prompt,plan,trace,result,review}.md
-        agent/{prompt,plan,trace,result,review}.md
-    docs/                             # external research the agent gathers during gates
-```
+**Terminology**:
 
-**Invocation surface:**
+- `fgate` → `flever` (project + skill-prefix + plugin name).
+- "gates" → "levers" (the six steps that move the workflow forward).
+- `.agents/gates/` → `.agents/levers/` (workspace state directory).
 
-- **Claude Code** — after `/plugin install fgate@<marketplace>` (or `claude --plugin-dir ./fgate` for dev), each skill is invocable as `/fgate:prompt`, `/fgate:plan`, etc. Slash commands and skills are now the same primitive in Claude Code, so no `commands/*.md` shells needed. Plugin-installed skills are namespaced by the plugin manager — bare invocations like `/prompt` are not available from a plugin install (would require manual install into `~/.claude/skills/` instead).
-- **Gemini CLI** — after `gemini extensions install fmind/fgate` (or `gemini extensions link ./fgate`), TOML shells under `commands/fgate/` give `/fgate:prompt`, `/fgate:plan`, etc. Each shell is ~5 lines and `@{skills/<name>/SKILL.md}`-embeds the canonical body, so the procedure lives in one place. The `commands/fgate/` subfolder is what creates the `fgate:` namespace.
-- **Tool-agnostic** — `npx skills add fmind/fgate` (Vercel-maintained, agentskills.io) is a third install path that symlinks SKILL.md files into the user's `.claude/skills/` (Claude Code) or `.agents/skills/` (every other agent in its install table). Useful for tools without a native plugin/extension surface; loses the `/fgate:` slash namespace and the TOML shells.
+**Rename map** (every occurrence):
 
-## 5. State Management
+| Path                                                          | Change                                                                                              |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `skills/fgate-*/SKILL.md`                                     | rename dirs to `skills/flever-*/`; `name:` frontmatter to `flever-<gate>`; body text "fgate" → "flever" and "gate"/"gates" → "lever"/"levers" where the meaning is the workflow step (NOT in `<gate-status>` tag — keep that name as-is for backward-compat through one release; deprecate in the next) |
+| `commands/fgate/*.toml`                                       | rename dir to `commands/flever/`; update any `description`/`prompt` body referencing the old name   |
+| `.agents/gates/`                                              | rename to `.agents/levers/` in all docs and skill bodies; provide a one-shot migration note in `fgate-init` (`mv .agents/gates .agents/levers` if present) |
+| `gemini-extension.json`, `plugin.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | rename keys `name`, `id`, `slug` from `fgate` → `flever`; bump version                                |
+| `package.json` / `package-lock.json`                          | rename `name`                                                                                       |
+| `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `BENCHMARK-2.md` | replace `fgate` with `flever`, `gate` (workflow-step sense) with `lever`; keep historical references in changelog |
+| `benchmarks/v2/skills/...`                                    | leave for traceability; add a one-line note in `benchmarks/RESULTS.md` that v2 was the seed for the renamed `flever-*` skills |
 
-- Task ID = numeric prefix; resolver accepts `1` or `social_auth` (slug match).
-- **Branch per task.** `/fgate:prompt` creates `gates/<N>_<slug>` off `main`. All gate files commit on that branch. `/fgate:review` suggests the merge back. Concurrent tasks = concurrent branches = no collisions.
-- File presence determines the gate within a task:
-  - `prompt.md` exists, no `plan.md` → ready for `/fgate:plan`.
-  - `plan.md` exists, no `trace.md` → ready for `/fgate:implement`.
-  - `result.md` exists → ready for `/fgate:review`.
-- Worktrees per task are an optional accelerator (`git worktree add ../fgate-<id> gates/<id>_<slug>`); not required for v1. Useful for true parallel execution; defer enforcement.
+**Tag-name decision** — `<gate-status>` stays. Renaming the tag would break every host integration (CI greps, hooks). Document it as "the lever-status tag, named `<gate-status>` for historical reasons" in `AGENTS.md`. Ship a parallel `<lever-status>` alias in the next minor release; deprecate `<gate-status>` one release after that with a clear migration window.
 
-## 6. Cross-Tool Common Denominator
+**GitHub repo**:
 
-Both Claude Code and Gemini CLI consume **Agent Skills** (open standard at agentskills.io: `SKILL.md` + YAML frontmatter `name`+`description`). The ONLY canonical artifact set is the six `skills/<name>/SKILL.md`. Every other layer is a thin manifest.
+- Rename `github.com/<owner>/fgate` → `github.com/<owner>/flever` via the GitHub UI (preserves redirects). Update remote in any clones with `git remote set-url origin git@github.com:<owner>/flever.git`.
+- Update repository description, homepage URL, topics.
+- Update README badges and links.
+- No "renamed" notice / changelog entry / version bump is needed — the project has not been released.
 
-| Layer       | Form                                                                       | Path                                              |
-| ----------- | -------------------------------------------------------------------------- | ------------------------------------------------- |
-| Canonical   | Agent Skills SKILL.md (`name` + `description` frontmatter)                 | `skills/<name>/SKILL.md`                          |
-| Claude Code | Plugin manifest (skills auto-discovered, namespaced as `/fgate:<name>`)    | `.claude-plugin/plugin.json` + `marketplace.json` |
-| Gemini CLI  | Extension manifest + TOML shells embedding skill body via `@{...}`         | `gemini-extension.json` + `commands/fgate/*.toml` |
-| Copilot     | Deferred — limited custom-command capability                               |                                                   |
+**Local working directory**: stays `~/fgate` per the user's instruction. The project name and metadata change; the path does not. Add a `# NOTE` in the top-level README explaining the local-path/project-name divergence is intentional.
 
-**What works in both** (verified in `docs/research/`):
+**Order**: do step 10 *after* steps 1–9 are committed on `main`. Renaming during a port produces a noisy diff and obscures intent. Step 10 is the last thing this PLAN does.
 
-- SKILL.md folder layout (`skills/<n>/SKILL.md` + optional siblings under `<n>/`).
-- Frontmatter `name` + `description` (the two-field portable subset of the Agent Skills standard).
-- Markdown body with the gate's contract; references in sibling files.
-- A repo-level context file (`AGENTS.md` is the open-standard name; `CLAUDE.md` and `GEMINI.md` are tool-specific aliases — each is a one-line `@AGENTS.md` import, so AGENTS.md stays the only source of truth).
+## Step 11 — end the session
 
-**What does NOT cross over** (avoid in canonical bodies):
+When step 10 is committed on `main`:
 
-- Claude Code's `${CLAUDE_SKILL_DIR}`, `!`...``, `${user_config.X}` substitutions — Gemini CLI doesn't expand them.
-- Gemini CLI's `!{shell}` and `@{path}` substitutions — only valid in TOML shells, not in SKILL.md bodies.
-- Claude Code's `paths`, `allowed-tools`, `argument-hint`, `disable-model-invocation` frontmatter — Gemini CLI ignores them. Keep them as documentation only; do not rely on them for behavior.
+1. Run the regression check from step 8 one more time on the renamed surface; commit any fixes.
+2. Stop. The PLAN.md agent's job is done. Do **not** open or read `BENCHMARK-2.md` from this session.
+3. Print a short summary to the user: "PLAN.md done. Step 11 complete. Awaiting your review before BENCHMARK-2."
 
-**Rule**: anything that needs a tool-specific feature lives in the manifest layer (TOML shell or plugin.json), not in the canonical SKILL.md.
+The user reviews the diff and, if satisfied, starts a new clean session for `BENCHMARK-2.md`. This PLAN does not chain into BENCHMARK-2.
 
-## 7. Conventions (enforced or recommended)
+## Out of scope for this PLAN
 
-- **Skill body ≤ 200 words.** CI-checked via `scripts/check-skill-words.sh`. Heavy reference material lives in sibling files (`skills/<n>/references/`, `skills/<n>/templates/`).
-- **Skill `description` starts with "Use when…"** Trigger-rich, not workflow-summarizing (per superpowers' writing-skills rule).
-- **AGENTS.md is a list of bullets**: ~30 bullets after `/fgate:init`; grows organically as `/fgate:improve` adds learnings. No hard cap on count or line length — the agent needs room to be expressive.
-- **`/fgate:improve` only edits AGENTS.md OR one skill body per invocation, never both.** No structural rearrangement; if the system needs a re-architecture, that's a manual decision.
-- **Each skill ends by suggesting the next command.** Most gates suggest exactly one next step; `/fgate:review` is the explicit exception — it may branch (merge to `main`, `/fgate:prompt` for follow-up work, or `/fgate:improve` for meta-process tweaks).
-- **`/fgate:prompt` Q&A capped at 3 questions.** If criteria still aren't concrete, fail loud — don't advance.
-- **Pin `version` in `plugin.json` and `gemini-extension.json` from day one.** Without it, Claude Code uses git SHA → every commit is a forced upgrade.
-- **`trace.md` is append-only during `/fgate:implement`.** Don't rewrite past entries; record events as they happen so the log reflects actual execution order.
-
-## 8. Implementation Phases
-
-### Phase 0 — Research (DONE)
-
-Outputs in `docs/research/`: `superpowers.md`, `gstack.md`, `claude-code.md`, `gemini-cli.md`, `pain-points.md`. Pinned comparison points: superpowers v5.0.7, spec-kit v0.0.91+. Differentiation thesis (3 pillars in §1) verified against HN, GitHub issues, and the Anthropic Agent Skills standard.
-
-### Phase 1 — Author canonical skills
-
-Six `skills/<name>/SKILL.md`. Each:
-
-- YAML frontmatter: `name` (matching folder), `description` ("Use when…").
-- Body ≤ 200 words: read X, write Y, suggest exactly one next step.
-- Sibling reference files (templates, examples) under the skill folder if needed.
-
-Borrow patterns from superpowers (hard gates between stages, predictable artifact paths, name-the-next-skill ending) and gstack (specialist sub-checklists for `/fgate:review`). Avoid superpowers' moralizing tone, gstack's role-playing personae, and any 9-step linear processes.
-
-### Phase 2 — Plugin / extension manifests
-
-- `.claude-plugin/plugin.json` (with `version` pinned; default `./skills/`, no override needed) + `.claude-plugin/marketplace.json` (single-repo install, `"source": "./"`).
-- `gemini-extension.json` at repo root (minimal: `name`, `version`, `description`, `contextFileName: "GEMINI.md"`). Skills auto-discovered from `./skills/` (path is hardcoded in Gemini's loader).
-- Six TOML shells under `commands/fgate/<name>.toml`. Each ~5 lines: a `description`, a `prompt` that `@{skills/<name>/SKILL.md}`-embeds and tail-appends `{{args}}`.
-- Commit a `.agents/skills` symlink → `../skills/` so the author's `.agents/skills/`-based personal workflow resolves fgate's skills while editing fgate. End users never see this; they get a real `.agents/skills/` directory via `/fgate:init`.
-
-### Phase 3 — Context files & CI
-
-- `AGENTS.md` (canonical) starts ~30 bullets from `/fgate:init`; grows over time via `/fgate:improve`. No hard cap on count or line length.
-- `CLAUDE.md` = `@AGENTS.md`; `GEMINI.md` = `@./AGENTS.md`. Both tools natively expand `@file.md` in their context files (verified: code.claude.com/docs/en/memory shows the AGENTS.md interop pattern; geminicli.com/docs/cli/gemini-md documents `@file.md` imports). Optional tool-specific notes go below the import.
-- `scripts/check-skill-words.sh` (pure bash, no deps) — only the SKILL.md word cap is enforced. AGENTS.md size is left to human judgement.
-- A pre-commit hook (or GitHub Action) running the check.
-
-### Phase 4 — Dogfood
-
-Run `/fgate:init` on a fresh sample repo, then drive a real task through `/fgate:prompt` → `/fgate:plan` → `/fgate:implement` → `/fgate:review`. Test on **both** Gemini CLI and Claude Code — the "common denominator" claim holds only if both work end-to-end. Capture friction via `/fgate:improve`.
-
-### Phase 5 — Announce (optional, after Phase 4 succeeds)
-
-Draft a Show HN post leaning on pain-points pitches #1 (tool-portability: "one skill set, two CLIs") and #3 (minimalism: "6 skills × 200 words"). Don't publish until both Gemini CLI and Claude Code paths run cleanly on a non-fgate repo.
-
-## 9. Open Questions / Deferred
-
-- **Worktrees per task**: convention vs. enforced. Useful for true parallel execution; deferred to v0.2 unless dogfooding demands it.
-- **Marketplace listings** (Claude plugin marketplace, gemini-extensions repo): timing depends on dogfood quality.
-- **Reference AGENTS.md source for `/fgate:init`**: local path, URL, or both. v1 generates from scratch; reuse-from-source is v0.2.
-- **`/fgate:improve` mutation target when fgate is plugin-installed**: edit user's project `AGENTS.md`? Mutate the cached plugin? Open a PR against fgate's source? **Default for v1**: mutate user's project `AGENTS.md`; fgate-source mutations need a manual PR (or are produced as a diff in the branch/worktree mode for the user to PR).
-- **Copilot support**: revisit when Copilot's custom-command surface matures.
-
-## 10. Non-Goals (v1)
-
-- Python or PyPI distribution.
-- Heavy bash scripting.
-- Replacing built-in plan modes; fgate sits alongside them.
-- Multi-repo / team-level coordination.
-- Telemetry of any kind.
-- LLM-classifier safety layers (gstack-style 22MB model). Trust the host CLI's defaults.
-
-## 11. Risk Register (from pain-points §6)
-
-Top failure modes the plan actively mitigates:
-
-1. **Skill bodies bloat past 200 words.** → Mitigated by `scripts/check-skill-words.sh` in Phase 3 (CI-enforced).
-2. **`/fgate:improve` produces ugly, unmergeable diffs.** → Mitigated by the rule that `/fgate:improve` edits AGENTS.md OR one skill body per invocation, never both, and never structural rearrangements. Reviewability comes from small scope, not a line-length cap.
-3. **Gemini CLI half silently broken in dogfooding.** → Mitigated by Phase 4 mandate to test both tools before announce.
-4. **superpowers/gstack already cover 80%.** → Counter-positioning is explicit (3-pillar moat, ≤ 200-word bodies, files-as-state). Differentiation is verifiable in 30 seconds of README.
-5. **No-name solo OSS gets ignored.** → Phase 5 ships a blog post first; the repo is the artifact, not the pitch.
+- Multi-task chaining, parallel gate execution, sub-agent spawning. The current single-thread loop is fast enough at 176 s; orchestration is a bigger design and not load-bearing for the benchmark wins.
+- Replacing `verify:` with a richer DSL (timeouts, expected-output matchers). Plain shell exit codes are enough for the cases observed in the benchmark.
+- Auto-pushing the `<gate-status>` tag into a CI job. The skill must never mutate git state per `AGENTS.md` §Workflow.

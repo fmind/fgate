@@ -1,7 +1,7 @@
-description = "fgate plan — investigate the codebase and produce a precise per-file specification."
+description = "Investigate the codebase to turn the prompt into a precise specification with refined success criteria."
 
 prompt = """
-@{skills/plan/SKILL.md}
+Activate and follow the `fgate-plan` skill.
 
 {{args}}
 """
